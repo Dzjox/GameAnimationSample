@@ -26,6 +26,9 @@ bool UDashComponent::Dash()
 	Char->LaunchCharacter(LaunchVel, true, true);
 
 	CurrentCharges = FMath::Max(0, CurrentCharges - 1);
+	OnChargesChanged.Broadcast(CurrentCharges, RegenIntervalSeconds);
+	OnDash.Broadcast();
+
 	bCanDash = false;
 
 	if (GetWorld())
@@ -55,13 +58,15 @@ void UDashComponent::OnUseDelayComplete()
 
 void UDashComponent::OnRegenTick()
 {
-	if (CurrentCharges < MaxCharges)
-	{
-		CurrentCharges = FMath::Clamp(CurrentCharges + 1, 0, MaxCharges);
-	}
+	CurrentCharges = FMath::Clamp(CurrentCharges + 1, 0, MaxCharges);
 
 	if (CurrentCharges >= MaxCharges && GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(RegenTimerHandle);
+		OnChargesChanged.Broadcast(CurrentCharges, 0);
+	}
+	else
+	{
+		OnChargesChanged.Broadcast(CurrentCharges, RegenIntervalSeconds);
 	}
 }

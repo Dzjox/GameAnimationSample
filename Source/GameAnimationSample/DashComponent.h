@@ -9,6 +9,9 @@
 class ACharacter;
 struct FTimerHandle;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDash);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChargesChanged, int32, NewCharges, int32, RechargeTime);
+
 UCLASS(ClassGroup=(Custom), Blueprintable, BlueprintType, meta=(BlueprintSpawnableComponent))
 class GAMEANIMATIONSAMPLE_API UDashComponent : public UActorComponent
 {
@@ -35,6 +38,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
 	float UpwardStrength = 200.0f;
+
+	UPROPERTY(BlueprintAssignable, Category = "Dash")
+	FOnDash OnDash;
+
+	UPROPERTY(BlueprintAssignable, Category = "Dash")
+	FOnChargesChanged OnChargesChanged;
 
 private:
 	bool bCanDash = true;
