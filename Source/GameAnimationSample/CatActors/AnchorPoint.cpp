@@ -2,9 +2,9 @@
 
 
 #include "AnchorPoint.h"
+#include "../CatComponents/HookComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
-#include "../Components/HookComponent.h"
 
 AAnchorPoint::AAnchorPoint()
 {

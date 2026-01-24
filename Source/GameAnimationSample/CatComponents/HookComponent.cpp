@@ -2,12 +2,12 @@
 
 
 #include "HookComponent.h"
+#include "DrawDebugHelpers.h"
+#include "TimerManager.h"
+#include "../CatActors/AnchorPoint.h"
+#include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Engine/World.h"
-#include "TimerManager.h"
-#include "DrawDebugHelpers.h"
-#include "../Actors/AnchorPoint.h"
 
 UHookComponent::UHookComponent()
 {

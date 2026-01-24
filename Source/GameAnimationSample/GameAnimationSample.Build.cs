@@ -15,6 +15,7 @@ public class GameAnimationSample : ModuleRules
 			,"Engine"
 			,"InputCore"
 			,"GameplayTags"
+			,"GameAnimationSample"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

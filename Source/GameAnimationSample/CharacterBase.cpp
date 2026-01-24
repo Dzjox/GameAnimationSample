@@ -2,7 +2,6 @@
 
 
 #include "CharacterBase.h"
-
 #include "GameFramework/CharacterMovementComponent.h"
 
 
@@ -12,14 +11,22 @@ ACharacterBase::ACharacterBase()
 
 }
 
-void ACharacterBase::AddCondition(const FGameplayTag& ConditionTag)
+void ACharacterBase::AddCondition_Implementation(const FGameplayTag& ConditionTag)
 {
-	CharacterConditions.AddTag(ConditionTag);
+	if (!CharacterConditions.HasTag(ConditionTag))
+	{
+		CharacterConditions.AddTag(ConditionTag);
+		OnConditionsChanged.Broadcast(CharacterConditions);
+	}
 }
 
-void ACharacterBase::RemoveCondition(const FGameplayTag& ConditionTag)
+void ACharacterBase::RemoveCondition_Implementation(const FGameplayTag& ConditionTag)
 {
-	CharacterConditions.RemoveTag(ConditionTag);
+	if (CharacterConditions.HasTag(ConditionTag))
+	{
+		CharacterConditions.RemoveTag(ConditionTag);
+		OnConditionsChanged.Broadcast(CharacterConditions);
+	}
 }
 
 bool ACharacterBase::HasCondition(const FGameplayTag& ConditionTag) const
@@ -47,10 +54,4 @@ void ACharacterBase::Custom_Jump()
 	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Jump")))) return;
 	Jump();
 }
-
-void ACharacterBase::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
 

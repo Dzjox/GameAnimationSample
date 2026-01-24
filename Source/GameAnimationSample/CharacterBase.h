@@ -4,23 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "CatInterfaces/ConditionInterface.h"
 #include "GameFramework/Character.h"
 #include "CharacterBase.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnConditionsChanged, FGameplayTagContainer&, Conditions);
+
 UCLASS()
-class GAMEANIMATIONSAMPLE_API ACharacterBase : public ACharacter
+class GAMEANIMATIONSAMPLE_API ACharacterBase : public ACharacter, public IConditionInterface
 {
 	GENERATED_BODY()
 
 public:
-
 	ACharacterBase();
 
-	UFUNCTION(BlueprintCallable, Category="Character|Conditions")
-	void AddCondition(const FGameplayTag& ConditionTag);
-
-	UFUNCTION(BlueprintCallable, Category="Character|Conditions")
-	void RemoveCondition(const FGameplayTag& ConditionTag);
+	UPROPERTY(BlueprintAssignable, Category="Character|Events")
+	FOnConditionsChanged OnConditionsChanged;
 
 	UFUNCTION(BlueprintCallable, Category="Character|Conditions")
 	bool HasCondition(const FGameplayTag& ConditionTag) const;
@@ -34,9 +33,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Character|Movement")
 	void Custom_Jump();
 
-	virtual void Tick(float DeltaSeconds) override;
+	virtual void AddCondition_Implementation(const FGameplayTag& ConditionTag) override;
+	virtual void RemoveCondition_Implementation(const FGameplayTag& ConditionTag) override;
 
 private:
 	FGameplayTagContainer CharacterConditions;
-
 };
