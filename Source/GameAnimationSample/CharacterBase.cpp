@@ -8,25 +8,6 @@
 ACharacterBase::ACharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-}
-
-void ACharacterBase::AddCondition_Implementation(const FGameplayTag& ConditionTag)
-{
-	if (!CharacterConditions.HasTag(ConditionTag))
-	{
-		CharacterConditions.AddTag(ConditionTag);
-		OnConditionsChanged.Broadcast(CharacterConditions);
-	}
-}
-
-void ACharacterBase::RemoveCondition_Implementation(const FGameplayTag& ConditionTag)
-{
-	if (CharacterConditions.HasTag(ConditionTag))
-	{
-		CharacterConditions.RemoveTag(ConditionTag);
-		OnConditionsChanged.Broadcast(CharacterConditions);
-	}
 }
 
 bool ACharacterBase::HasCondition(const FGameplayTag& ConditionTag) const
@@ -53,5 +34,28 @@ void ACharacterBase::Custom_Jump()
 {
 	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Jump")))) return;
 	Jump();
+}
+
+void ACharacterBase::AddTag_Implementation(const FGameplayTag& Tag)
+{
+	if (!CharacterConditions.HasTag(Tag))
+	{
+		CharacterConditions.AddTag(Tag);
+		OnConditionsChanged.Broadcast(CharacterConditions);
+	}
+}
+
+void ACharacterBase::RemoveTag_Implementation(const FGameplayTag& Tag)
+{
+	if (CharacterConditions.HasTag(Tag))
+	{
+		CharacterConditions.RemoveTag(Tag);
+		OnConditionsChanged.Broadcast(CharacterConditions);
+	}
+}
+
+bool ACharacterBase::HaseTag_Implementation(const FGameplayTag& Tag)
+{
+	return CharacterConditions.HasTag(Tag);
 }
 

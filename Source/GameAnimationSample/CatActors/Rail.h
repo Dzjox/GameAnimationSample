@@ -23,6 +23,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	USplineComponent* Spline;
 
+	UPROPERTY(EditAnywhere, Category = "Rail", meta = (ClampMin = "1.0"))
+	float DefaultSpeed = 1000.f;
+
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
@@ -41,17 +44,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Rail")
 	FName GeneratedTag = FName("Rail_Generated");
 
-	UPROPERTY(EditAnywhere, Category = "Rail", meta = (ClampMin = "1.0"))
-	float DefaultSpeed = 1000.f;
-
 	UFUNCTION()
 	void RebuildRailFromExamples();
 
 	void ClearGeneratedExamples();
 
 public:
-	void AddRider(ACharacter* Character, float StartDistance, float Speed = 300.f);
-
 	UFUNCTION()
 	void OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	                            UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,

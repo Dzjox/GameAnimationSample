@@ -1,28 +1,103 @@
 #include "RailRidingComponent.h"
+#include "GameplayTagContainer.h"
 #include "../CatActors/Rail.h"
+#include "../CatInterfaces/ConditionInterface.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h"
 
 URailRidingComponent::URailRidingComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
-	SetComponentTickEnabled(true);
 }
 
-void URailRidingComponent::StartRide(ARail* InRail, float StartDistance, float InSpeed)
+void URailRidingComponent::StopRide()
 {
-	if (!InRail) return;
+	if (GetOwnerCharacter())
+	{
+		if (UCharacterMovementComponent* MoveComp = GetOwnerCharacter()->GetCharacterMovement())
+		{
+			MoveComp->SetMovementMode(MOVE_Walking);
+			MoveComp->GravityScale = 1.f;
+		}
 
-	ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
-	if (!OwnerChar) return;
+		IConditionInterface::Execute_RemoveTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing")));
 
+		if (UWorld* World = GetOwnerCharacter()->GetWorld())
+		{
+			FTimerDelegate Del = FTimerDelegate::CreateLambda([Owner = GetOwnerCharacter()]()
+			{
+				if (Owner && Owner->GetClass()->ImplementsInterface(UConditionInterface::StaticClass()))
+				{
+					IConditionInterface::Execute_RemoveTag(Owner, FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Railing")));
+				}
+			});
+			FTimerHandle TimerHandle;
+			World->GetTimerManager().SetTimer(TimerHandle, Del, 0.5f, false);
+		}
+	}
+
+	Rail = nullptr;
+}
+
+ACharacter* URailRidingComponent::GetOwnerCharacter() const
+{
+	if (OwnerChar) return OwnerChar;
+	return Cast<ACharacter>(GetOwner());
+}
+
+void URailRidingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (!IConditionInterface::Execute_HaseTag(
+		GetOwnerCharacter(),
+		FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing"))))
+	{
+		return;
+	}
+	
+	if (!Rail || !Rail->Spline || !GetOwnerCharacter()) 
+	{
+		if (IConditionInterface::Execute_HaseTag(
+			GetOwnerCharacter(),
+			FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing"))))
+		{
+			StopRide();
+		}
+		return;
+	}
+	
+	Distance += Speed * DeltaTime;
+
+	if (RailLength > 0.f && Distance >= RailLength)
+	{
+		StopRide();
+		return;
+	}
+
+	FVector NewLocation = Rail->Spline->GetLocationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+	FRotator NewRotation = Rail->Spline->GetRotationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
+
+	GetOwnerCharacter()->SetActorLocationAndRotation(NewLocation + RailOffset, NewRotation);
+}
+
+void URailRidingComponent::StartRide(ARail* InRail)
+{
+	if (!GetOwnerCharacter() || !InRail) return;
+	if (IConditionInterface::Execute_HaseTag(
+		GetOwnerCharacter(),
+		FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Railing")))
+		) return;
+
+	IConditionInterface::Execute_AddTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Railing")));
+	IConditionInterface::Execute_AddTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing")));
+	
 	Rail = InRail;
-	Distance = FMath::Max(0.f, StartDistance);
-	Speed = InSpeed > 0.f ? InSpeed : 300.f;
-	bIsRiding = true;
-
+	Distance = Rail->Spline->GetDistanceAlongSplineAtLocation(GetOwnerCharacter()->GetActorLocation(), ESplineCoordinateSpace::World);
+	Speed = Rail->DefaultSpeed;
+	
 	if (InRail->Spline)
 	{
 		RailLength = InRail->Spline->GetSplineLength();
@@ -32,61 +107,11 @@ void URailRidingComponent::StartRide(ARail* InRail, float StartDistance, float I
 		RailLength = 0.f;
 	}
 
-	if (UCharacterMovementComponent* MoveComp = OwnerChar->GetCharacterMovement())
+	if (UCharacterMovementComponent* MoveComp = GetOwnerCharacter()->GetCharacterMovement())
 	{
 		MoveComp->StopMovementImmediately();
 		MoveComp->SetMovementMode(MOVE_Flying);
 		MoveComp->GravityScale = 0.f;
 	}
+
 }
-
-void URailRidingComponent::StopRide()
-{
-	if (!bIsRiding) return;
-
-	ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
-	if (OwnerChar)
-	{
-		if (UCharacterMovementComponent* MoveComp = OwnerChar->GetCharacterMovement())
-		{
-			MoveComp->SetMovementMode(MOVE_Walking);
-			MoveComp->GravityScale = 1.f;
-		}
-	}
-
-	bIsRiding = false;
-	Rail = nullptr;
-
-	DestroyComponent();
-}
-
-void URailRidingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (!bIsRiding) return;
-	ARail* RailPtr = Rail.Get();
-	if (!RailPtr || !RailPtr->Spline) 
-	{
-		StopRide();
-		return;
-	}
-
-	Distance += Speed * DeltaTime;
-
-	if (RailLength > 0.f && Distance >= RailLength)
-	{
-		StopRide();
-		return;
-	}
-
-	FVector NewLocation = RailPtr->Spline->GetLocationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
-	FRotator NewRotation = RailPtr->Spline->GetRotationAtDistanceAlongSpline(Distance, ESplineCoordinateSpace::World);
-
-	AActor* OwnerActor = GetOwner();
-	if (OwnerActor)
-	{
-		OwnerActor->SetActorLocationAndRotation(NewLocation, NewRotation);
-	}
-}
-

@@ -33,8 +33,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Character|Movement")
 	void Custom_Jump();
 
-	virtual void AddCondition_Implementation(const FGameplayTag& ConditionTag) override;
-	virtual void RemoveCondition_Implementation(const FGameplayTag& ConditionTag) override;
+	virtual void AddTag_Implementation(const FGameplayTag& Tag) override;
+	virtual void RemoveTag_Implementation(const FGameplayTag& Tag) override;
+	virtual bool HaseTag_Implementation(const FGameplayTag& Tag) override;
 
 private:
 	FGameplayTagContainer CharacterConditions;

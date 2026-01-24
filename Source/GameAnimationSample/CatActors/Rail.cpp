@@ -109,51 +109,21 @@ void ARail::RebuildRailFromExamples()
 	}
 }
 
-void ARail::AddRider(ACharacter* Character, float StartDistance, float Speed)
-{
-	if (!Character) return;
-
-	TArray<URailRidingComponent*> FoundComps;
-	Character->GetComponents<URailRidingComponent>(FoundComps);
-
-	for (URailRidingComponent* Comp : FoundComps)
-	{
-		if (Comp && Comp->IsRegistered())
-		{
-			Comp->StopRide();
-		}
-	}
-
-	URailRidingComponent* NewComp = NewObject<URailRidingComponent>(Character);
-	if (!NewComp) return;
-
-	NewComp->RegisterComponent();
-	NewComp->StartRide(this, StartDistance, Speed > 0.f ? Speed : DefaultSpeed);
-}
-
 void ARail::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
                                   bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!OtherActor || OtherActor == this)
+	if (!OtherActor || OtherActor == this || !Spline)
 	{
 		return;
 	}
 
-	ACharacter* Char = Cast<ACharacter>(OtherActor);
-	if (!Char)
+	URailRidingComponent* RRComponent = OtherActor->GetComponentByClass<URailRidingComponent>();
+
+	if (!RRComponent)
 	{
 		return;
 	}
 
-	if (!Spline)
-	{
-		return;
-	}
-
-	const FVector CharLoc = Char->GetActorLocation();
-	const float InputKey = Spline->FindInputKeyClosestToWorldLocation(CharLoc);
-	const float StartDistance = Spline->GetDistanceAlongSplineAtSplineInputKey(InputKey);
-
-	AddRider(Char, StartDistance, DefaultSpeed);
+	RRComponent->StartRide(this);
 }

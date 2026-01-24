@@ -17,9 +17,12 @@ class IConditionInterface
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character|Conditions")
-	void AddCondition(const FGameplayTag& ConditionTag);
+	void AddTag(const FGameplayTag& Tag);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character|Conditions")
-	void RemoveCondition(const FGameplayTag& ConditionTag);
+	void RemoveTag(const FGameplayTag& Tag);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Character|Conditions")
+	bool HaseTag(const FGameplayTag& Tag);
 };
 

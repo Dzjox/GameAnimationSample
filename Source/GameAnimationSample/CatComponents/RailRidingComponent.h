@@ -18,16 +18,27 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable, Category="Rail")
-	void StartRide(ARail* InRail, float StartDistance, float InSpeed);
+	void StartRide(ARail* InRail);
 
 	UFUNCTION(BlueprintCallable, Category="Rail")
 	void StopRide();
 
-private:
-	TWeakObjectPtr<ARail> Rail;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Rail")
+	FVector RailOffset = FVector(0,0,30);
+	
+protected:
+	UPROPERTY()
+	ACharacter* OwnerChar;
+	UPROPERTY()
+	ARail* Rail;
+
+	UPROPERTY()
 	float Distance = 0.f;
+	UPROPERTY()
 	float Speed = 0.f;
-	bool bIsRiding = false;
+	UPROPERTY()
 	float RailLength = 0.f;
+	
+	ACharacter* GetOwnerCharacter() const;
 };
 
