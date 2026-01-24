@@ -21,7 +21,7 @@ public:
 	void StartRide(ARail* InRail);
 
 	UFUNCTION(BlueprintCallable, Category="Rail")
-	void StopRide();
+	void StopRide(bool bEndOfRail);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Rail")
 	FVector RailOffset = FVector(0,0,30);

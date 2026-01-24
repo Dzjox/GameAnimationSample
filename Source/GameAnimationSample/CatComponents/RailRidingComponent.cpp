@@ -12,7 +12,7 @@ URailRidingComponent::URailRidingComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void URailRidingComponent::StopRide()
+void URailRidingComponent::StopRide(bool bEndOfRail /*= false*/)
 {
 	if (GetOwnerCharacter())
 	{
@@ -20,6 +20,14 @@ void URailRidingComponent::StopRide()
 		{
 			MoveComp->SetMovementMode(MOVE_Walking);
 			MoveComp->GravityScale = 1.f;
+		}
+
+		if (bEndOfRail && Rail && Rail->Spline)
+		{
+			float LaunchDistance = FMath::Clamp(Distance, 0.f, RailLength);
+			FVector Tangent = Rail->Spline->GetTangentAtDistanceAlongSpline(LaunchDistance, ESplineCoordinateSpace::World).GetSafeNormal();
+			FVector LaunchVelocity = Tangent * Speed + FVector::UpVector * (Speed * 0.25f);
+			GetOwnerCharacter()->LaunchCharacter(LaunchVelocity, true, true);
 		}
 
 		IConditionInterface::Execute_RemoveTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing")));
@@ -64,7 +72,7 @@ void URailRidingComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 			GetOwnerCharacter(),
 			FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing"))))
 		{
-			StopRide();
+			StopRide(false);
 		}
 		return;
 	}
@@ -73,7 +81,7 @@ void URailRidingComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 	if (RailLength > 0.f && Distance >= RailLength)
 	{
-		StopRide();
+		StopRide(true);
 		return;
 	}
 
