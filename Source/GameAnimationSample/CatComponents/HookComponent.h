@@ -9,6 +9,8 @@
 class ACharacter;
 class AAnchorPoint;
 struct FTimerHandle;
+class UPrimitiveComponent;
+class UCapsuleComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnClosestAnchorChanged, AAnchorPoint*, NewAnchor);
 
@@ -19,6 +21,8 @@ class GAMEANIMATIONSAMPLE_API UHookComponent : public UActorComponent
 
 public:
 	UHookComponent();
+
+	void NotifyAnchorReached(AAnchorPoint* Anchor);
 
 protected:
 	virtual void BeginPlay() override;
@@ -31,16 +35,10 @@ public:
 	bool HookToClosestAnchor();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hook")
-	float PullSpeed = 2000.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hook")
 	float PullStopDistance = 150.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hook")
-	float LaunchStrength = 1800.f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hook")
-	float LaunchUpwardStrength = 400.f;
+	float LookDirectionMultiplier = 0.5f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hook")
 	AAnchorPoint* ClosestVisibleAnchor = nullptr;
@@ -68,4 +66,13 @@ private:
 	void UpdateClosestAnchor();
 	void StartPullToAnchor(AAnchorPoint* Anchor);
 	void StopPullAndLaunch();
+
+	UPROPERTY()
+	UCapsuleComponent* OwnerCapsule = nullptr;
+
+	UFUNCTION()
+	void OnCapsuleBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnCapsuleEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

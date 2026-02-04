@@ -8,25 +8,46 @@
 #include "Engine/World.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
 
 UHookComponent::UHookComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
+void UHookComponent::NotifyAnchorReached(AAnchorPoint* Anchor)
+{
+	if (!bIsPulling) return;
+	if (!Anchor) return;
+	if (TargetAnchor != Anchor) return;
+	StopPullAndLaunch();
+}
+
 void UHookComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	OwnerCharacter = Cast<ACharacter>(GetOwner());
-	UpdateClosestAnchor();
-	if (GetWorld())
+	if (OwnerCharacter)
 	{
-		GetWorld()->GetTimerManager().SetTimer(ClosestAnchorTimerHandle, this, &UHookComponent::UpdateClosestAnchor, 0.5f, true);
+		OwnerCapsule = OwnerCharacter->GetCapsuleComponent();
+		if (OwnerCapsule)
+		{
+			OwnerCapsule->OnComponentBeginOverlap.AddDynamic(this, &UHookComponent::OnCapsuleBeginOverlap);
+			OwnerCapsule->OnComponentEndOverlap.AddDynamic(this, &UHookComponent::OnCapsuleEndOverlap);
+		}
 	}
+	UpdateClosestAnchor();
 }
 
 void UHookComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if (OwnerCapsule)
+	{
+		OwnerCapsule->OnComponentBeginOverlap.RemoveDynamic(this, &UHookComponent::OnCapsuleBeginOverlap);
+		OwnerCapsule->OnComponentEndOverlap.RemoveDynamic(this, &UHookComponent::OnCapsuleEndOverlap);
+		OwnerCapsule = nullptr;
+	}
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ClosestAnchorTimerHandle);
@@ -37,6 +58,8 @@ void UHookComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void UHookComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	UpdateClosestAnchor();
 
 	if (!bIsPulling || !OwnerCharacter || !TargetAnchor) return;
 
@@ -56,7 +79,8 @@ void UHookComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 			PrevMovementMode = MoveComp->MovementMode;
 			MoveComp->SetMovementMode(MOVE_Flying);
 		}
-		MoveComp->Velocity = Dir * PullSpeed;
+		float EffectivePullSpeed = TargetAnchor ? TargetAnchor->PullSpeed : 0.f;
+		MoveComp->Velocity = Dir * EffectivePullSpeed;
 	}
 	else
 	{
@@ -83,8 +107,9 @@ AAnchorPoint* UHookComponent::FindClosestVisibleAnchor()
 	if (!World || !OwnerCharacter) return nullptr;
 
 	AAnchorPoint* Best = nullptr;
-	float BestDistSq = FLT_MAX;
+	float BestDistScore = FLT_MAX;
 	FVector Start = OwnerCharacter->GetActorLocation();
+	FVector Forward = OwnerCharacter->GetActorForwardVector().GetSafeNormal();
 
 	for (AAnchorPoint* Anchor : NearbyAnchors)
 	{
@@ -100,10 +125,17 @@ AAnchorPoint* UHookComponent::FindClosestVisibleAnchor()
 		if (bHit) continue;
 
 		float DistSq = FVector::DistSquared(Start, End);
-		if (DistSq >= BestDistSq) continue;
+
+		FVector ToAnchor = (End - Start).GetSafeNormal();
+		float Dot = FVector::DotProduct(Forward, ToAnchor);
+		float ClampedDot = FMath::Clamp(Dot, 0.0f, 1.0f);
+		float Weight = 1.0f - LookDirectionMultiplier * ClampedDot;
+		float DistScore = DistSq * Weight;
+
+		if (DistScore >= BestDistScore) continue;
 
 		Best = Anchor;
-		BestDistSq = DistSq;
+		BestDistScore = DistScore;
 	}
 
 	return Best;
@@ -139,7 +171,7 @@ void UHookComponent::StartPullToAnchor(AAnchorPoint* Anchor)
 
 void UHookComponent::StopPullAndLaunch()
 {
-	if (!OwnerCharacter || !TargetAnchor) 
+	if (!OwnerCharacter || !TargetAnchor)
 	{
 		bIsPulling = false;
 		TargetAnchor = nullptr;
@@ -152,16 +184,29 @@ void UHookComponent::StopPullAndLaunch()
 		MoveComp->SetMovementMode((EMovementMode)PrevMovementMode);
 	}
 
-	FVector FromAnchor =  TargetAnchor->GetActorLocation() - OwnerCharacter->GetActorLocation();
-	FVector LaunchDir = FromAnchor.GetSafeNormal();
-	if (LaunchDir.IsNearlyZero())
-	{
-		LaunchDir = OwnerCharacter->GetActorForwardVector();
-	}
+	float PreservedSpeed = OwnerCharacter->GetVelocity().Size();
 
-	FVector LaunchVel = LaunchDir * LaunchStrength + FVector::UpVector * LaunchUpwardStrength;
-	OwnerCharacter->LaunchCharacter(LaunchVel, true, true);
+	if (TargetAnchor)
+	{
+		TargetAnchor->LaunchCharacterFromAnchor(OwnerCharacter, PreservedSpeed);
+	}
 
 	bIsPulling = false;
 	TargetAnchor = nullptr;
+}
+
+void UHookComponent::OnCapsuleBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (!OtherActor && OtherComp) OtherActor = OtherComp->GetOwner();
+	AAnchorPoint* Anchor = Cast<AAnchorPoint>(OtherActor);
+	if (!Anchor && OtherComp) Anchor = Cast<AAnchorPoint>(OtherComp->GetOwner());
+	if (Anchor) RegisterNearbyAnchor(Anchor);
+}
+
+void UHookComponent::OnCapsuleEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (!OtherActor && OtherComp) OtherActor = OtherComp->GetOwner();
+	AAnchorPoint* Anchor = Cast<AAnchorPoint>(OtherActor);
+	if (!Anchor && OtherComp) Anchor = Cast<AAnchorPoint>(OtherComp->GetOwner());
+	if (Anchor) UnregisterNearbyAnchor(Anchor);
 }

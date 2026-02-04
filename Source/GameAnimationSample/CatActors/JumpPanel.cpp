@@ -44,6 +44,7 @@ void AJumpPanel::OnConstruction(const FTransform& Transform)
 	if (bShowTrajectory)
 	{
 		UpdateTrajectorySpline();
+		UpdateArrowDirection();
 	}
 #endif
 }
@@ -55,8 +56,9 @@ void AJumpPanel::UpdateTrajectorySpline()
 		return;
 	}
 
-	FVector Start = Arrow->GetComponentLocation();
-	FVector Dir = Arrow->GetForwardVector().GetSafeNormal();
+	FVector Start = GetActorLocation();
+	FRotator StartRotator = GetActorRotation()+LaunchDirection;
+	FVector Dir = StartRotator.Vector().GetSafeNormal();
 	FVector InitialVel = Dir * LaunchStrength;
 	float GravityZ = GetWorld() ? GetWorld()->GetGravityZ() : -980.f;
 
@@ -72,9 +74,14 @@ void AJumpPanel::UpdateTrajectorySpline()
 	TrajectorySpline->UpdateSpline();
 }
 
+void AJumpPanel::UpdateArrowDirection()
+{
+	Arrow->SetWorldRotation(LaunchDirection+GetActorRotation());
+}
+
 void AJumpPanel::OnMeshBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                       UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-                                       bool bFromSweep, const FHitResult& SweepResult)
+                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+                                    bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!OtherActor || OtherActor == this)
 	{
@@ -87,8 +94,8 @@ void AJumpPanel::OnMeshBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor*
 		return;
 	}
 
-	FVector Dir = Arrow->GetForwardVector();
-	Dir = Dir.GetSafeNormal();
+	FRotator StartRotator = GetActorRotation()+LaunchDirection;
+	FVector Dir = StartRotator.Vector().GetSafeNormal();
 	FVector LaunchVel = Dir * LaunchStrength;
 	LaunchVel.Z *= LaunchZMultiplier;
 

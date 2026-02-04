@@ -71,15 +71,13 @@ void ARail::RebuildRailFromExamples()
 
 	for (float Dist = 0.f; Dist <= SplineLength + KINDA_SMALL_NUMBER; Dist += SpawnPeriod)
 	{
-		FVector Location = Spline->GetLocationAtDistanceAlongSpline(Dist, ESplineCoordinateSpace::World);
-		FRotator Rotation = Spline->GetRotationAtDistanceAlongSpline(Dist, ESplineCoordinateSpace::World);
+		FTransform SpawnTransform = Spline->GetTransformAtDistanceAlongSpline(Dist, ESplineCoordinateSpace::World);
 
 		if (bHasMeshTemplate)
 		{
 			UStaticMeshComponent* NewSM = NewObject<UStaticMeshComponent>(this);
 			NewSM->SetStaticMesh(StaticMesh_Example->GetStaticMesh());
-			NewSM->SetWorldLocation(Location);
-			NewSM->SetWorldRotation(Rotation);
+			NewSM->SetWorldTransform(SpawnTransform);
 			NewSM->SetMobility(StaticMesh_Example->Mobility);
 			NewSM->SetRelativeScale3D(StaticMesh_Example->GetRelativeScale3D());
 			NewSM->SetCollisionEnabled(StaticMesh_Example->GetCollisionEnabled());
@@ -93,10 +91,9 @@ void ARail::RebuildRailFromExamples()
 		if (bHasBoxTemplate)
 		{
 			UBoxComponent* NewBox = NewObject<UBoxComponent>(this);
-			FVector BoxExtent = BoxCollision_Example->GetUnscaledBoxExtent();
+			FVector BoxExtent = BoxCollision_Example->GetScaledBoxExtent();
 			NewBox->SetBoxExtent(BoxExtent);
-			NewBox->SetWorldLocation(Location);
-			NewBox->SetWorldRotation(Rotation);
+			NewBox->SetWorldTransform(SpawnTransform);
 			NewBox->SetMobility(BoxCollision_Example->Mobility);
 			NewBox->SetCollisionEnabled(BoxCollision_Example->GetCollisionEnabled());
 			NewBox->SetCollisionProfileName(BoxCollision_Example->GetCollisionProfileName());

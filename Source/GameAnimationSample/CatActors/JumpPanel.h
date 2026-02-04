@@ -19,20 +19,23 @@ class GAMEANIMATIONSAMPLE_API AJumpPanel : public AActor
 public:
 	AJumpPanel();
 
-	UPROPERTY(EditAnywhere, Category = "Jump")
+	UPROPERTY(EditAnywhere)
 	float LaunchStrength = 1500.f;
 
-	UPROPERTY(EditAnywhere, Category = "Jump", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.0"))
 	float LaunchZMultiplier = 1.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Trajectory")
+	UPROPERTY(EditAnywhere)
 	bool bShowTrajectory = true;
 
-	UPROPERTY(EditAnywhere, Category = "Trajectory", meta = (ClampMin = "2"))
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "2"))
 	int32 TrajectoryPoints = 30;
 
-	UPROPERTY(EditAnywhere, Category = "Trajectory", meta = (ClampMin = "0.01"))
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01"))
 	float TrajectoryTimeStep = 0.1f;
+
+	UPROPERTY(EditAnywhere)
+	FRotator LaunchDirection = FRotator(90,0,0);
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,4 +56,8 @@ protected:
 	                           bool bFromSweep, const FHitResult& SweepResult);
 
 	void UpdateTrajectorySpline();
+	void UpdateArrowDirection();
+
+	// helper to compute final launch velocity from LaunchDirection / LaunchStrength / LaunchZMultiplier
+	FVector GetLaunchVelocity() const;
 };
