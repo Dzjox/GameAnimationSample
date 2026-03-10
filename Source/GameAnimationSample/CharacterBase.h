@@ -37,6 +37,7 @@ public:
 	virtual void RemoveTag_Implementation(const FGameplayTag& Tag) override;
 	virtual bool HaseTag_Implementation(const FGameplayTag& Tag) override;
 
-private:
+protected:
+	UPROPERTY(BlueprintReadOnly, Category="Character|Conditions")
 	FGameplayTagContainer CharacterConditions;
 };

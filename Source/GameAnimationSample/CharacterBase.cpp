@@ -2,7 +2,6 @@
 
 
 #include "CharacterBase.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 
 ACharacterBase::ACharacterBase()
@@ -17,7 +16,7 @@ bool ACharacterBase::HasCondition(const FGameplayTag& ConditionTag) const
 
 void ACharacterBase::Custom_AddMovementInput(FVector2D Input)
 {
-	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Movement")))) return;
+	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Block.Movement")))) return;
 	FVector Input3D = FVector(Input.X, Input.Y, 0.f);
 	FRotator ControlRotationZ = FRotator(0,GetControlRotation().Yaw, 0);
 	AddMovementInput(ControlRotationZ.RotateVector(Input3D));
@@ -25,14 +24,14 @@ void ACharacterBase::Custom_AddMovementInput(FVector2D Input)
 
 void ACharacterBase::Custom_AddControllerInput(FVector2D Input)
 {
-	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Rotation")))) return;
+	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Block.Rotation")))) return;
 	AddControllerYawInput(Input.X);
 	AddControllerPitchInput(Input.Y);
 }
 
 void ACharacterBase::Custom_Jump()
 {
-	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Jump")))) return;
+	if (CharacterConditions.HasTag(FGameplayTag::RequestGameplayTag(FName("Character.Block.Jump")))) return;
 	Jump();
 }
 

@@ -38,7 +38,7 @@ void URailRidingComponent::StopRide(bool bEndOfRail /*= false*/)
 			{
 				if (Owner && Owner->GetClass()->ImplementsInterface(UConditionInterface::StaticClass()))
 				{
-					IConditionInterface::Execute_RemoveTag(Owner, FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Railing")));
+					IConditionInterface::Execute_RemoveTag(Owner, FGameplayTag::RequestGameplayTag(FName("Character.Block.Railing")));
 				}
 			});
 			FTimerHandle TimerHandle;
@@ -96,10 +96,10 @@ void URailRidingComponent::StartRide(ARail* InRail)
 	if (!GetOwnerCharacter() || !InRail) return;
 	if (IConditionInterface::Execute_HaseTag(
 		GetOwnerCharacter(),
-		FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Railing")))
+		FGameplayTag::RequestGameplayTag(FName("Character.Block.Railing")))
 		) return;
 
-	IConditionInterface::Execute_AddTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Condition.Block.Railing")));
+	IConditionInterface::Execute_AddTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Block.Railing")));
 	IConditionInterface::Execute_AddTag(GetOwnerCharacter(), FGameplayTag::RequestGameplayTag(FName("Character.Condition.IsRailing")));
 	
 	Rail = InRail;
